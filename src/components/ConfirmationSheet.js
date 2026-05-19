@@ -4,7 +4,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, SHADOWS, BORDER_RADIUS } from '../constants/theme';
 import { SCANNED_MEDICINE } from '../constants/mockData';
 
-const ConfirmationSheet = ({ onAddToSchedule, onScanAgain }) => {
+const ConfirmationSheet = ({ medicine = SCANNED_MEDICINE, onAddToSchedule, onScanAgain }) => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             {/* AI confirmation message */}

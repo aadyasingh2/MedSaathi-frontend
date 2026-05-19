@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,16 @@ const EditProfileScreen = ({ route, navigation }) => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('+91 ');
     const [isDisabled, setIsDisabled] = useState(true);
+
+    useEffect(() => {
+        AsyncStorage.getItem('user_profile').then((user) => {
+            if (user) {
+                const parsed = JSON.parse(user);
+                setName(parsed.name || '');
+                setPhone(parsed.phone || '+91 ');
+            }
+        });
+    }, []);
 
     React.useEffect(() => {
         setIsDisabled(!name.trim() || !phone.trim() || phone.length < 10);

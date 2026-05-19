@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     StatusBar,
 } from 'react-native';
-import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import { CALENDAR_MEDICINES, MARKED_DATES } from '../constants/mockData';
@@ -18,15 +17,10 @@ const CalendarScreen = () => {
     const todayStr = getTodayString();
     const [selectedDate, setSelectedDate] = useState(todayStr);
 
-    // Merge marked dates with selected date
-    const mergedMarkedDates = {
-        ...MARKED_DATES,
-        [selectedDate]: {
-            ...(MARKED_DATES[selectedDate] || {}),
-            selected: true,
-            selectedColor: COLORS.primary,
-        },
-    };
+    const calendarDays = useMemo(
+        () => Object.keys(MARKED_DATES).sort(),
+        []
+    );
 
     const displayDate = new Date(selectedDate + 'T00:00:00');
 
@@ -46,55 +40,60 @@ const CalendarScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* Calendar */}
-                <View style={styles.calendarContainer}>
-                    <Calendar
-                        current={todayStr}
-                        onDayPress={(day) => setSelectedDate(day.dateString)}
-                        markedDates={mergedMarkedDates}
-                        theme={{
-                            backgroundColor: COLORS.white,
-                            calendarBackground: COLORS.white,
-                            textSectionTitleColor: COLORS.textMuted,
-                            selectedDayBackgroundColor: COLORS.primary,
-                            selectedDayTextColor: COLORS.white,
-                            todayTextColor: COLORS.primary,
-                            dayTextColor: COLORS.textDark,
-                            textDisabledColor: COLORS.textLight,
-                            dotColor: COLORS.primary,
-                            arrowColor: COLORS.primary,
-                            monthTextColor: COLORS.textDark,
-                            textMonthFontWeight: '700',
-                            textMonthFontSize: FONTS.sizes.lg,
-                            textDayFontSize: FONTS.sizes.md,
-                            textDayHeaderFontSize: FONTS.sizes.sm,
-                            textDayHeaderFontWeight: '600',
-                            'stylesheet.day.basic': {
-                                base: {
-                                    width: 36,
-                                    height: 36,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                },
-                            },
-                        }}
-                        style={styles.calendar}
-                    />
-                </View>
+                {/* Day strip */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.dayStrip}
+                >
+                    {calendarDays.map((dateString) => {
+                        const date = new Date(dateString + 'T00:00:00');
+                        const isSelected = dateString === selectedDate;
+                        const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' });
+                        const dayNumber = String(date.getDate()).padStart(2, '0');
+                        const hasDot = MARKED_DATES[dateString]?.marked;
 
-                {/* Selected date label */}
-                <Text style={styles.dateLabel}>
-                    Today — {formatDateShort(displayDate)}
-                </Text>
+                        return (
+                            <TouchableOpacity
+                                key={dateString}
+                                style={[
+                                    styles.dayCard,
+                                    isSelected && styles.dayCardActive,
+                                ]}
+                                onPress={() => setSelectedDate(dateString)}
+                            >
+                                <Text style={[
+                                    styles.dayLabel,
+                                    isSelected && styles.dayLabelActive,
+                                ]}
+                                >
+                                    {dayLabel}
+                                </Text>
+                                <Text style={[
+                                    styles.dayNumber,
+                                    isSelected && styles.dayNumberActive,
+                                ]}
+                                >
+                                    {dayNumber}
+                                </Text>
+                                <View style={[
+                                    styles.dot,
+                                    hasDot && styles.dotActive,
+                                ]}
+                                />
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
 
-                {/* Timeline */}
+                <Text style={styles.dateLabel}>{formatDateShort(displayDate)}</Text>
+
                 <View style={styles.timeline}>
                     {CALENDAR_MEDICINES.map((item) => (
                         <TimelineItem key={item.id} item={item} />
                     ))}
                 </View>
 
-                {/* Bottom spacer for tab bar */}
                 <View style={{ height: 100 }} />
             </ScrollView>
         </View>
@@ -127,14 +126,49 @@ const styles = StyleSheet.create({
     micButton: {
         padding: SPACING.xs,
     },
-    calendarContainer: {
-        backgroundColor: COLORS.white,
-        borderRadius: BORDER_RADIUS.lg,
-        overflow: 'hidden',
-        marginBottom: SPACING.xl,
+    dayStrip: {
+        paddingBottom: SPACING.lg,
+        marginBottom: SPACING.lg,
     },
-    calendar: {
+    dayCard: {
+        width: 88,
+        height: 96,
+        marginRight: SPACING.sm,
         borderRadius: BORDER_RADIUS.lg,
+        backgroundColor: COLORS.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: SPACING.sm,
+    },
+    dayCardActive: {
+        backgroundColor: COLORS.primary,
+    },
+    dayLabel: {
+        fontSize: FONTS.sizes.sm,
+        color: COLORS.textMuted,
+        marginBottom: SPACING.xs,
+        fontWeight: '700',
+    },
+    dayLabelActive: {
+        color: COLORS.white,
+    },
+    dayNumber: {
+        fontSize: FONTS.sizes.lg,
+        fontWeight: '800',
+        color: COLORS.textDark,
+    },
+    dayNumberActive: {
+        color: COLORS.white,
+    },
+    dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: COLORS.border,
+        marginTop: SPACING.sm,
+    },
+    dotActive: {
+        backgroundColor: COLORS.primary,
     },
     dateLabel: {
         fontSize: FONTS.sizes.lg,

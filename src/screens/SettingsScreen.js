@@ -11,7 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 
-const SettingsScreen = ({ navigation }) => {
+const SettingsScreen = ({ navigation, setIsOnboarded }) => {
     const [voiceEnabled, setVoiceEnabled] = useState(true);
     const [photoProofEnabled, setPhotoProofEnabled] = useState(true);
     const [selectedLanguage, setSelectedLanguage] = useState('EN');
@@ -35,7 +35,7 @@ const SettingsScreen = ({ navigation }) => {
                     text: 'Logout',
                     onPress: async () => {
                         await AsyncStorage.removeItem('user_profile');
-                        navigation.navigate('Welcome');
+                        setIsOnboarded(false);
                     },
                 },
             ]

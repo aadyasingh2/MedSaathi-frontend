@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import ScanOverlay from '../components/ScanOverlay';
 import ConfirmationSheet from '../components/ConfirmationSheet';
+import { SCANNED_MEDICINE } from '../constants/mockData';
 
 const ScanScreen = ({ navigation }) => {
     const [scanned, setScanned] = useState(false);
@@ -20,9 +21,10 @@ const ScanScreen = ({ navigation }) => {
     };
 
     const handleAddToSchedule = () => {
-        Alert.alert('Added!', 'Medicine has been added to your schedule.', [
-            { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        navigation.navigate('Question', {
+            medicineName: SCANNED_MEDICINE.name,
+            dosage: SCANNED_MEDICINE.dose,
+        });
     };
 
     const handleScanAgain = () => {
@@ -62,6 +64,7 @@ const ScanScreen = ({ navigation }) => {
             ) : (
                 /* Confirmation sheet after scan */
                 <ConfirmationSheet
+                    medicine={SCANNED_MEDICINE}
                     onAddToSchedule={handleAddToSchedule}
                     onScanAgain={handleScanAgain}
                 />

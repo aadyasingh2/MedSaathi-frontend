@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,16 @@ const EditCaregiverScreen = ({ route, navigation }) => {
     const [caregiverName, setCaregiverName] = useState('');
     const [caregiverPhone, setCaregiverPhone] = useState('+91 ');
     const [isDisabled, setIsDisabled] = useState(true);
+
+    useEffect(() => {
+        AsyncStorage.getItem('user_profile').then((user) => {
+            if (user) {
+                const parsed = JSON.parse(user);
+                setCaregiverName(parsed.caregiver?.name || '');
+                setCaregiverPhone(parsed.caregiver?.phone || '+91 ');
+            }
+        });
+    }, []);
 
     React.useEffect(() => {
         setIsDisabled(!caregiverName.trim() || !caregiverPhone.trim() || caregiverPhone.length < 10);

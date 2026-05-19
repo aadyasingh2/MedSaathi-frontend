@@ -66,15 +66,20 @@ const TAB_ICONS = {
     SettingsTab: { focused: 'settings', unfocused: 'settings-outline' },
 };
 
-const SettingsStack = () => (
+const SettingsStack = ({ setIsOnboarded }) => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="SettingsMain" component={SettingsScreen} />
+        <Stack.Screen
+            name="SettingsMain"
+            children={(props) => (
+                <SettingsScreen {...props} setIsOnboarded={setIsOnboarded} />
+            )}
+        />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="EditCaregiver" component={EditCaregiverScreen} options={{ animation: 'slide_from_right' }} />
     </Stack.Navigator>
 );
 
-const MainApp = () => (
+const MainApp = ({ setIsOnboarded }) => (
     <Tab.Navigator
         screenOptions={({ route }) => ({
             headerShown: false,
@@ -110,9 +115,10 @@ const MainApp = () => (
         <Tab.Screen name="Family" component={FamilyScreen} />
         <Tab.Screen
             name="SettingsTab"
-            component={SettingsStack}
             options={{ tabBarLabel: 'Settings' }}
-        />
+        >
+            {() => <SettingsStack setIsOnboarded={setIsOnboarded} />}
+        </Tab.Screen>
     </Tab.Navigator>
 );
 
@@ -162,7 +168,7 @@ const AppNavigator = () => {
     return (
         <NavigationContainer>
             {isOnboarded ? (
-                <MainApp />
+                <MainApp setIsOnboarded={setIsOnboarded} />
             ) : (
                 <OnboardingStack setIsOnboarded={setIsOnboarded} />
             )}

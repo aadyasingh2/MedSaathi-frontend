@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -12,9 +12,22 @@ import { COLORS, FONTS, SPACING, SHADOWS, BORDER_RADIUS } from '../constants/the
 import { USER_PROFILE, TODAY_MEDICINES } from '../constants/mockData';
 import { getGreeting } from '../utils/helpers';
 import MedicineCard from '../components/MedicineCard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ navigation }) => {
+    const [profile, setProfile] = useState(USER_PROFILE);
     const greeting = getGreeting();
+
+    useEffect(() => {
+        AsyncStorage.getItem('user_profile').then((value) => {
+            if (value) {
+                const parsed = JSON.parse(value);
+                setProfile({
+                    name: parsed.name || USER_PROFILE.name,
+                });
+            }
+        });
+    }, []);
 
     return (
         <View style={styles.screen}>
