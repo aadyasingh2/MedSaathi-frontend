@@ -52,9 +52,6 @@ const HomeStack = () => (
         <Stack.Screen name="Verified" component={VerifiedScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="MissedAlert" component={MissedDoseAlertScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="RefillReminder" component={RefillReminderScreen} options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="Settings" component={SettingsScreen} options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="EditCaregiver" component={EditCaregiverScreen} options={{ animation: 'slide_from_right' }} />
     </Stack.Navigator>
 );
 
@@ -117,7 +114,7 @@ const MainApp = ({ setIsOnboarded }) => (
             name="SettingsTab"
             options={{ tabBarLabel: 'Settings' }}
         >
-            {() => <SettingsStack setIsOnboarded={setIsOnboarded} />}
+            {(props) => <SettingsStack {...props} setIsOnboarded={setIsOnboarded} />}
         </Tab.Screen>
     </Tab.Navigator>
 );

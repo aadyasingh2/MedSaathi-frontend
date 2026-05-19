@@ -7,6 +7,7 @@ import {
     Switch,
     ScrollView,
     Alert,
+    Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
@@ -25,7 +26,18 @@ const SettingsScreen = ({ navigation, setIsOnboarded }) => {
         { code: 'PA', label: 'ਪੰਜਾਬੀ' },
     ];
 
+    const logout = async () => {
+        await AsyncStorage.removeItem('user_profile');
+        setIsOnboarded(false);
+    };
+
     const handleLogout = () => {
+        if (Platform.OS === 'web') {
+            const confirmed = window.confirm('Are you sure you want to logout?');
+            if (confirmed) logout();
+            return;
+        }
+
         Alert.alert(
             'Logout',
             'Are you sure you want to logout?',
@@ -33,10 +45,7 @@ const SettingsScreen = ({ navigation, setIsOnboarded }) => {
                 { text: 'Cancel', onPress: () => { } },
                 {
                     text: 'Logout',
-                    onPress: async () => {
-                        await AsyncStorage.removeItem('user_profile');
-                        setIsOnboarded(false);
-                    },
+                    onPress: logout,
                 },
             ]
         );
