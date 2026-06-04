@@ -7,6 +7,7 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
+    Alert,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 
@@ -20,8 +21,18 @@ const OTPScreen = ({ route, navigation }) => {
         return () => clearTimeout(timeout);
     }, []);
 
-    const handleVerify = () => {
-        navigation.navigate('CaregiverSetup', { profile });
+    const handleVerify = async () => {
+        const res = await fetch('http://10.255.177.152:3000/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: profile?.phone, otp }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            navigation.navigate('CaregiverSetup', { profile });
+        } else {
+            Alert.alert('Wrong OTP', 'Use 123456 for now');
+        }
     };
 
     const handleChange = (value) => {

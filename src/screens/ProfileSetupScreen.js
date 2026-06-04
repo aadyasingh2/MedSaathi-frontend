@@ -15,7 +15,12 @@ const ProfileSetupScreen = ({ route, navigation }) => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
 
-    const handleSendOTP = () => {
+    const handleSendOTP = async () => {
+        await fetch('http://10.255.177.152:3000/api/auth/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone.trim() }),
+        });
         navigation.navigate('OTP', {
             profile: { language, name: name.trim(), phone: phone.trim() },
         });
