@@ -1,130 +1,124 @@
 import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    StatusBar,
-    Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import ScanOverlay from '../components/ScanOverlay';
-import ConfirmationSheet from '../components/ConfirmationSheet';
-import { SCANNED_MEDICINE } from '../constants/mockData';
+
+const BACKEND_URL = 'http://10.255.177.152:3000'; // e.g. http://192.168.1.5:3000
 
 const ScanScreen = ({ navigation }) => {
-    const [scanned, setScanned] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const handleSimulateScan = () => {
-        setScanned(true);
+    const scanImage = async (uri) => {
+        setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', {
+                uri,
+                type: 'image/jpeg',
+                name: 'prescription.jpg',
+            });
+
+            const response = await fetch(`${BACKEND_URL}/api/scan`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.medicines && data.medicines.length > 0) {
+                navigation.navigate('Question', {
+                    medicineName: data.medicines[0].name,
+                    dosage: data.medicines[0].dose,
+                    allMedicines: data.medicines,
+                });
+            } else {
+                Alert.alert('Could not read', 'No medicines found. Try a clearer photo.');
+            }
+        } catch (e) {
+            console.error(e);
+            Alert.alert('Error', 'Could not reach backend. Check your IP.');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleAddToSchedule = () => {
-        navigation.navigate('Question', {
-            medicineName: SCANNED_MEDICINE.name,
-            dosage: SCANNED_MEDICINE.dose,
-        });
+    const handleCamera = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') { Alert.alert('Permission needed'); return; }
+        const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+        if (!result.canceled) await scanImage(result.assets[0].uri);
     };
 
-    const handleScanAgain = () => {
-        setScanned(false);
+    const handleGallery = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+        if (!result.canceled) await scanImage(result.assets[0].uri);
     };
 
     return (
         <View style={styles.screen}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-
-            {/* Header */}
+            <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.textDark} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Scan Medicine</Text>
-                <TouchableOpacity style={styles.micButton}>
-                    <Ionicons name="mic-outline" size={24} color={COLORS.primary} />
-                </TouchableOpacity>
+                <View style={{ width: 24 }} />
             </View>
 
-            {!scanned ? (
-                /* Camera viewfinder area */
-                <View style={styles.cameraContainer}>
-                    <TouchableOpacity
-                        style={styles.cameraArea}
-                        activeOpacity={0.9}
-                        onPress={handleSimulateScan}
-                    >
+            <View style={styles.cameraContainer}>
+                {loading ? (
+                    <View style={styles.loadingBox}>
+                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <Text style={styles.loadingText}>Reading prescription...</Text>
+                    </View>
+                ) : (
+                    <View style={styles.cameraArea}>
                         <ScanOverlay />
-                        <Text style={styles.cameraText}>
-                            Point camera at bottle{'\n'}or prescription
-                        </Text>
-                        <Text style={styles.tapHint}>(Tap to simulate scan)</Text>
+                        <Text style={styles.cameraText}>Point camera at prescription{'\n'}or medicine bottle</Text>
+                    </View>
+                )}
+            </View>
+
+            {!loading && (
+                <View style={styles.buttons}>
+                    <TouchableOpacity style={styles.primaryBtn} onPress={handleCamera}>
+                        <Ionicons name="camera" size={22} color={COLORS.white} />
+                        <Text style={styles.primaryBtnText}>Take Photo</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.secondaryBtn} onPress={handleGallery}>
+                        <Text style={styles.secondaryBtnText}>Choose from Gallery</Text>
                     </TouchableOpacity>
                 </View>
-            ) : (
-                /* Confirmation sheet after scan */
-                <ConfirmationSheet
-                    medicine={SCANNED_MEDICINE}
-                    onAddToSchedule={handleAddToSchedule}
-                    onScanAgain={handleScanAgain}
-                />
             )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-        backgroundColor: COLORS.white,
-    },
+    screen: { flex: 1, backgroundColor: COLORS.white },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: SPACING.xl,
-        paddingTop: SPACING.xxxl + 16,
-        paddingBottom: SPACING.lg,
-        backgroundColor: COLORS.white,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: SPACING.xl, paddingTop: SPACING.xxxl + 16, paddingBottom: SPACING.lg,
     },
-    backButton: {
-        padding: SPACING.xs,
-    },
-    headerTitle: {
-        fontSize: FONTS.sizes.xl,
-        fontWeight: '700',
-        color: COLORS.primary,
-    },
-    micButton: {
-        padding: SPACING.xs,
-    },
-    cameraContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingBottom: SPACING.xxxl,
-    },
+    headerTitle: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.primary },
+    cameraContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     cameraArea: {
-        backgroundColor: '#1A1A1A',
-        borderRadius: BORDER_RADIUS.xl,
-        width: '85%',
-        aspectRatio: 0.85,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
+        backgroundColor: '#1A1A1A', borderRadius: BORDER_RADIUS.xl,
+        width: '85%', aspectRatio: 0.85, justifyContent: 'center', alignItems: 'center',
     },
-    cameraText: {
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: FONTS.sizes.md,
-        textAlign: 'center',
-        marginTop: SPACING.xxl,
-        lineHeight: 22,
+    cameraText: { color: 'rgba(255,255,255,0.7)', fontSize: FONTS.sizes.md, textAlign: 'center', marginTop: SPACING.xxl },
+    loadingBox: { alignItems: 'center', gap: SPACING.lg },
+    loadingText: { fontSize: FONTS.sizes.md, color: COLORS.textMuted, fontWeight: '600' },
+    buttons: { padding: SPACING.xl, gap: SPACING.md, paddingBottom: SPACING.xxxl },
+    primaryBtn: {
+        backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'center', paddingVertical: SPACING.lg, borderRadius: BORDER_RADIUS.xl, gap: SPACING.sm,
     },
-    tapHint: {
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: FONTS.sizes.sm,
-        marginTop: SPACING.md,
-    },
+    primaryBtnText: { color: COLORS.white, fontSize: FONTS.sizes.md, fontWeight: '700' },
+    secondaryBtn: { alignItems: 'center', paddingVertical: SPACING.lg },
+    secondaryBtnText: { color: COLORS.textMuted, fontSize: FONTS.sizes.md, fontWeight: '700' },
 });
 
 export default ScanScreen;
