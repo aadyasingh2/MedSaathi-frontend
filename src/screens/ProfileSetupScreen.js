@@ -7,23 +7,47 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
+    Alert,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { getTranslation } from '../constants/translations';
+import { API_BASE_URL } from '../config/api';
 
 const ProfileSetupScreen = ({ route, navigation }) => {
-    const { language } = route.params || {};
+    const { language = 'EN' } = route.params || {};
+    const t = (key) => getTranslation(language, key);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
 
     const handleSendOTP = async () => {
-        await fetch('http://10.255.177.152:3000/api/auth/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: phone.trim() }),
-        });
-        navigation.navigate('OTP', {
-            profile: { language, name: name.trim(), phone: phone.trim() },
-        });
+        const cleanPhone = phone.trim();
+        if (!name.trim() || !cleanPhone) return;
+
+        setIsSendingOtp(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: cleanPhone }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                const message = data?.error || data?.message || 'Could not send OTP right now.';
+                Alert.alert('OTP error', message);
+                return;
+            }
+
+            navigation.navigate('OTP', {
+                profile: { language, name: name.trim(), phone: cleanPhone },
+            });
+        } catch (e) {
+            Alert.alert('Connection error', 'Could not send OTP right now.');
+        } finally {
+            setIsSendingOtp(false);
+        }
     };
 
     const isDisabled = !name.trim() || !phone.trim();
@@ -34,11 +58,11 @@ const ProfileSetupScreen = ({ route, navigation }) => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View style={styles.container}>
-                <Text style={styles.title}>Your details</Text>
-                <Text style={styles.subtitle}>So we can greet you properly</Text>
+                <Text style={styles.title}>{t('yourDetails')}</Text>
+                <Text style={styles.subtitle}>{t('yourDetailsSubtitle')}</Text>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Your name</Text>
+                    <Text style={styles.label}>{t('yourName')}</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="Ramesh Kumar"
@@ -49,7 +73,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Your phone number</Text>
+                    <Text style={styles.label}>{t('yourPhone')}</Text>
                     <View style={styles.phoneRow}>
                         <View style={styles.countryCode}>
                             <Text style={styles.countryText}>🇮🇳 +91</Text>
@@ -67,16 +91,16 @@ const ProfileSetupScreen = ({ route, navigation }) => {
 
                 <View style={styles.noticeCard}>
                     <Text style={styles.noticeText}>
-                        📱 We'll send a 6-digit code to confirm your number
+                        {t('otpNotice')}
                     </Text>
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.ctaButton, isDisabled && styles.ctaButtonDisabled]}
+                    style={[styles.ctaButton, (isDisabled || isSendingOtp) && styles.ctaButtonDisabled]}
                     onPress={handleSendOTP}
-                    disabled={isDisabled}
+                    disabled={isDisabled || isSendingOtp}
                 >
-                    <Text style={styles.ctaText}>Send OTP →</Text>
+                    <Text style={styles.ctaText}>{isSendingOtp ? 'Sending…' : t('sendOtp')}</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>

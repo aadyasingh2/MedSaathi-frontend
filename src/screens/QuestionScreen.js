@@ -9,7 +9,7 @@ import {
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 
 const QuestionScreen = ({ route, navigation }) => {
-    const { medicineName, dosage } = route.params || {};
+    const { medicineName, dosage, allMedicines = [] } = route.params || {};
     const [timesPerDay, setTimesPerDay] = useState(null);
     const [timeOfDay, setTimeOfDay] = useState([]);
     const [withFood, setWithFood] = useState(null);
@@ -21,6 +21,7 @@ const QuestionScreen = ({ route, navigation }) => {
             timesPerDay,
             timeOfDay,
             withFood,
+            allMedicines,
         });
     };
 
@@ -30,6 +31,12 @@ const QuestionScreen = ({ route, navigation }) => {
         <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
             <Text style={styles.title}>Set up {medicineName}</Text>
             <Text style={styles.subtitle}>Just a few quick questions</Text>
+            {allMedicines.length > 1 ? (
+                <View style={styles.noticeCard}>
+                    <Text style={styles.noticeText}>Detected {allMedicines.length} medicines from the prescription.</Text>
+                    <Text style={styles.noticeSubtext}>We’ll save all of them to your schedule.</Text>
+                </View>
+            ) : null}
 
             {/* Times per day */}
             <View style={styles.section}>
@@ -44,7 +51,7 @@ const QuestionScreen = ({ route, navigation }) => {
                             ]}
                             onPress={() => {
                                 setTimesPerDay(num);
-                                setTimeOfDay(Array(num).fill(null));
+                                setTimeOfDay([]);
                             }}
                         >
                             <Text
@@ -199,6 +206,24 @@ const styles = StyleSheet.create({
         fontSize: FONTS.sizes.sm,
         color: COLORS.textMuted,
         marginTop: SPACING.sm,
+    },
+    noticeCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: BORDER_RADIUS.lg,
+        borderWidth: 1,
+        borderColor: COLORS.primaryLight,
+        padding: SPACING.lg,
+        marginBottom: SPACING.xl,
+    },
+    noticeText: {
+        color: COLORS.textDark,
+        fontSize: FONTS.sizes.sm,
+        fontWeight: '700',
+        marginBottom: SPACING.xs,
+    },
+    noticeSubtext: {
+        color: COLORS.textMuted,
+        fontSize: FONTS.sizes.sm,
     },
     ctaButton: {
         backgroundColor: COLORS.primary,

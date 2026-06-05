@@ -9,9 +9,12 @@ import {
     Platform,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { getTranslation } from '../constants/translations';
 
 const CaregiverSetupScreen = ({ route, navigation }) => {
     const { profile } = route.params || {};
+    const language = profile?.language || 'EN';
+    const t = (key) => getTranslation(language, key);
     const [caregiverName, setCaregiverName] = useState('Priya (daughter)');
     const [caregiverPhone, setCaregiverPhone] = useState('99887 76655');
 
@@ -41,14 +44,12 @@ const CaregiverSetupScreen = ({ route, navigation }) => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View style={styles.container}>
-                <Text style={styles.title}>Family contact</Text>
-                <Text style={styles.subtitle}>
-                    If you miss a medicine, we'll alert this person automatically
-                </Text>
-                <Text style={styles.note}>🔔 They'll get a message if you don't take your medicine within 30 minutes</Text>
+                <Text style={styles.title}>{t('familyContact')}</Text>
+                <Text style={styles.subtitle}>{t('familySubtitle')}</Text>
+                <Text style={styles.note}>{t('familyNote')}</Text>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Caregiver name</Text>
+                    <Text style={styles.label}>{t('caregiverName')}</Text>
                     <TextInput
                         style={styles.input}
                         value={caregiverName}
@@ -58,7 +59,7 @@ const CaregiverSetupScreen = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Caregiver phone</Text>
+                    <Text style={styles.label}>{t('caregiverPhone')}</Text>
                     <View style={styles.phoneRow}>
                         <View style={styles.countryCode}>
                             <Text style={styles.countryText}>🇮🇳 +91</Text>
@@ -74,11 +75,11 @@ const CaregiverSetupScreen = ({ route, navigation }) => {
                 </View>
 
                 <TouchableOpacity style={styles.ctaButton} onPress={handleContinue}>
-                    <Text style={styles.ctaText}>Continue →</Text>
+                    <Text style={styles.ctaText}>{t('continue')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                    <Text style={styles.skipText}>Skip for now</Text>
+                    <Text style={styles.skipText}>{t('skipForNow')}</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>

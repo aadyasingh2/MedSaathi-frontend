@@ -5,23 +5,99 @@ import {
     TouchableOpacity,
     StyleSheet,
     Alert,
+    Image,
+    ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { API_BASE_URL } from '../config/api';
 
 const ProofCameraScreen = ({ route, navigation }) => {
-    const { medicineName, dosage, selectedType } = route.params || {};
+    const { medicineName, dosage, selectedType, medicineId } = route.params || {};
     const [hasPhoto, setHasPhoto] = useState(false);
+    const [photoUri, setPhotoUri] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [verificationMessage, setVerificationMessage] = useState('');
 
-    const handleSimulateCapture = () => {
+    const handleCapture = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Camera access is required to verify the proof photo.');
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            quality: 0.8,
+            allowsEditing: true,
+            aspect: [4, 5],
+        });
+
+        if (result.canceled || !result.assets?.[0]?.uri) return;
+
+        const uri = result.assets[0].uri;
+        setPhotoUri(uri);
         setHasPhoto(true);
+        await verifyPhoto(uri);
     };
 
-    const handleVerify = () => {
-        navigation.navigate('Verified', { medicineName, dosage });
+    const verifyPhoto = async (uri) => {
+        try {
+            setLoading(true);
+            setVerificationMessage('');
+
+            const formData = new FormData();
+            formData.append('image', {
+                uri,
+                type: 'image/jpeg',
+                name: 'proof.jpg',
+            });
+
+            const res = await fetch(`${API_BASE_URL}/api/verify-proof`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await res.json();
+            const verified = Boolean(data?.verified);
+            const confidence = data?.confidence || 'medium';
+            const message = data?.message || (res.ok ? 'Medicine photo was reviewed.' : 'Verification request failed.');
+
+            setVerificationMessage(`${verified ? 'AI verified' : 'Needs review'} · ${confidence.toUpperCase()} confidence · ${message}`);
+
+            navigation.navigate('Verified', {
+                medicineName,
+                dosage,
+                medicineId,
+                verification: {
+                    verified,
+                    confidence,
+                    message,
+                    fallback: !res.ok,
+                },
+            });
+        } catch (error) {
+            const message = error.message || 'Could not verify this photo.';
+            setVerificationMessage(`Verification issue · ${message}`);
+            navigation.navigate('Verified', {
+                medicineName,
+                dosage,
+                medicineId,
+                verification: {
+                    verified: false,
+                    confidence: 'low',
+                    message,
+                    fallback: true,
+                },
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleRetake = () => {
         setHasPhoto(false);
+        setPhotoUri('');
+        setVerificationMessage('');
     };
 
     const guides = {
@@ -34,15 +110,17 @@ const ProofCameraScreen = ({ route, navigation }) => {
         return (
             <View style={styles.screen}>
                 <View style={styles.previewCard}>
-                    <View style={styles.placeholderImage}>
-                        <Text style={styles.placeholderEmoji}>📸</Text>
-                        <Text style={styles.placeholderText}>Photo captured</Text>
-                    </View>
+                    <Image source={{ uri: photoUri }} style={styles.previewImage} />
+                    {loading ? (
+                        <View style={styles.loadingBox}>
+                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <Text style={styles.loadingText}>Checking photo with AI…</Text>
+                        </View>
+                    ) : null}
+                    {verificationMessage ? (
+                        <Text style={styles.verificationText}>{verificationMessage}</Text>
+                    ) : null}
                 </View>
-
-                <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
-                    <Text style={styles.verifyButtonText}>Verify →</Text>
-                </TouchableOpacity>
 
                 <TouchableOpacity style={styles.retakeButton} onPress={handleRetake}>
                     <Text style={styles.retakeButtonText}>Retake photo</Text>
@@ -84,12 +162,13 @@ const ProofCameraScreen = ({ route, navigation }) => {
 
             <TouchableOpacity
                 style={styles.captureButton}
-                onPress={handleSimulateCapture}
+                onPress={handleCapture}
+                disabled={loading}
             >
                 <View style={styles.captureDot} />
             </TouchableOpacity>
 
-            <Text style={styles.hint}>(Tap to simulate capture)</Text>
+            <Text style={styles.hint}>{loading ? 'Verifying your photo…' : 'Tap to capture and verify with AI'}</Text>
         </View>
     );
 };
@@ -155,13 +234,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SPACING.xl,
     },
-    placeholderImage: {
-        width: 200,
-        height: 250,
-        backgroundColor: COLORS.background,
+    previewImage: {
+        width: 260,
+        height: 320,
         borderRadius: BORDER_RADIUS.lg,
-        justifyContent: 'center',
+        backgroundColor: COLORS.background,
+    },
+    loadingBox: {
+        marginTop: SPACING.md,
         alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: SPACING.sm,
+        color: COLORS.textMuted,
+        fontSize: FONTS.sizes.sm,
+        fontWeight: '600',
+    },
+    verificationText: {
+        marginTop: SPACING.md,
+        textAlign: 'center',
+        color: COLORS.textDark,
+        fontSize: FONTS.sizes.sm,
+        fontWeight: '600',
+        lineHeight: 20,
     },
     placeholderEmoji: {
         fontSize: 48,

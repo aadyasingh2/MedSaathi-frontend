@@ -9,25 +9,37 @@ import {
 } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, SHADOWS, BORDER_RADIUS } from '../constants/theme';
-import { USER_PROFILE, TODAY_MEDICINES } from '../constants/mockData';
-import { getGreeting } from '../utils/helpers';
+import { USER_PROFILE } from '../constants/mockData';
+import { getGreeting, loadMedicines } from '../utils/helpers';
 import MedicineCard from '../components/MedicineCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ navigation }) => {
     const [profile, setProfile] = useState(USER_PROFILE);
+    const [medicines, setMedicines] = useState([]);
     const greeting = getGreeting();
 
+    const refreshMedicines = async () => {
+        const saved = await loadMedicines();
+        setMedicines(saved.length ? saved : []);
+    };
+
     useEffect(() => {
-        AsyncStorage.getItem('user_profile').then((value) => {
+        const loadProfile = async () => {
+            const value = await AsyncStorage.getItem('user_profile');
             if (value) {
                 const parsed = JSON.parse(value);
-                setProfile({
-                    name: parsed.name || USER_PROFILE.name,
-                });
+                setProfile({ name: parsed.name || USER_PROFILE.name });
             }
-        });
+        };
+        loadProfile();
+        refreshMedicines();
     }, []);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', refreshMedicines);
+        return unsubscribe;
+    }, [navigation]);
 
     return (
         <View style={styles.screen}>
@@ -56,10 +68,10 @@ const HomeScreen = ({ navigation }) => {
                 {/* Greeting */}
                 <View style={styles.greetingSection}>
                     <Text style={styles.greetingText}>
-                        {greeting}, {USER_PROFILE.name} 🌿
+                        {greeting}, {profile.name || USER_PROFILE.name} 🌿
                     </Text>
                     <Text style={styles.subText}>
-                        You have {TODAY_MEDICINES.length} medicines today
+                        You have {medicines.length || 0} medicines today
                     </Text>
                 </View>
 
@@ -91,9 +103,20 @@ const HomeScreen = ({ navigation }) => {
 
                 {/* Today's medicines */}
                 <Text style={styles.sectionTitle}>Today's medicines</Text>
-                {TODAY_MEDICINES.map((med) => (
-                    <MedicineCard key={med.id} medicine={med} />
-                ))}
+                {medicines.length ? medicines.map((med) => (
+                    <MedicineCard
+                        key={med.id}
+                        medicine={med}
+                        onTake={() => navigation.navigate('DailyProof', {
+                            medicineName: med.name,
+                            dosage: med.dose,
+                            dueTime: med.time || 'Now',
+                            medicineId: med.id,
+                        })}
+                    />
+                )) : (
+                    <Text style={styles.emptyText}>Scan a prescription to add your first medicine.</Text>
+                )}
 
                 {/* Bottom spacer for tab bar */}
                 <View style={{ height: 100 }} />
@@ -221,6 +244,11 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: COLORS.textDark,
         marginBottom: SPACING.lg,
+    },
+    emptyText: {
+        fontSize: FONTS.sizes.md,
+        color: COLORS.textMuted,
+        marginBottom: SPACING.xl,
     },
 });
 

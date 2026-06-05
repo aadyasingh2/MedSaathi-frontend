@@ -7,11 +7,31 @@ import {
     ScrollView,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { addMedicine } from '../utils/helpers';
 
 const ConfirmMedicineScreen = ({ route, navigation }) => {
-    const { medicineName, dosage, timesPerDay, timeOfDay, withFood } = route.params || {};
+    const { medicineName, dosage, timesPerDay, timeOfDay, withFood, allMedicines = [] } = route.params || {};
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        const medicinesToSave = allMedicines.length
+            ? allMedicines.map((item) => ({
+                name: item.name || medicineName || 'Medicine',
+                dose: item.dose || dosage || '1 tablet',
+                time: item.times || (timeOfDay?.[0] ? `${timeOfDay[0]} dose` : 'Morning dose'),
+                times: item.times || timeOfDay?.join(', ') || 'As scheduled',
+                meal: withFood ? 'with food' : 'without food',
+                duration: item.duration || '30 days',
+            }))
+            : [{
+                name: medicineName || 'Medicine',
+                dose: dosage || '1 tablet',
+                time: timeOfDay?.[0] ? `${timeOfDay[0]} dose` : 'Morning dose',
+                times: timeOfDay?.join(', ') || 'As scheduled',
+                meal: withFood ? 'with food' : 'without food',
+                duration: '30 days',
+            }];
+
+        await Promise.all(medicinesToSave.map((item) => addMedicine(item)));
         navigation.navigate('HomeMain');
     };
 

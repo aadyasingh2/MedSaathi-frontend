@@ -9,7 +9,7 @@ import {
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 
 const DailyProofScreen = ({ route, navigation }) => {
-    const { medicineName, dosage, dueTime } = route.params || {
+    const { medicineName, dosage, dueTime, medicineId } = route.params || {
         medicineName: 'Metformin',
         dosage: '500mg',
         dueTime: '9:00 AM',
@@ -28,7 +28,7 @@ const DailyProofScreen = ({ route, navigation }) => {
             Alert.alert('Select type', 'Please select the medicine type first');
             return;
         }
-        navigation.navigate('ProofCamera', { medicineName, dosage, selectedType });
+        navigation.navigate('ProofCamera', { medicineName, dosage, selectedType, medicineId });
     };
 
     return (

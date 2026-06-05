@@ -2,9 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { getTranslation } from '../constants/translations';
+import { API_BASE_URL } from '../config/api';
 
 const AllSetScreen = ({ route, navigation, setIsOnboarded }) => {
     const { profile } = route.params || {};
+    const language = profile?.language || 'EN';
+    const t = (key) => getTranslation(language, key);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -13,9 +17,23 @@ const AllSetScreen = ({ route, navigation, setIsOnboarded }) => {
         }
     }, [profile, navigation]);
 
+
     const handleFinish = async () => {
         setSaving(true);
         try {
+            // Save to MongoDB
+            await fetch(`${API_BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: profile?.name,
+                    phone: profile?.phone,
+                    language: profile?.language,
+                    caregiverName: profile?.caregiverName,
+                    caregiverPhone: profile?.caregiverPhone,
+                }),
+            });
+            // Save to AsyncStorage
             await AsyncStorage.setItem('user_profile', JSON.stringify(profile));
             setIsOnboarded(true);
         } catch (error) {
@@ -24,21 +42,20 @@ const AllSetScreen = ({ route, navigation, setIsOnboarded }) => {
             setSaving(false);
         }
     };
-
     return (
         <View style={styles.screen}>
             <View style={styles.card}>
                 <View style={styles.iconCircle}>
                     <Text style={styles.icon}>✓</Text>
                 </View>
-                <Text style={styles.title}>You're all set!</Text>
+                <Text style={styles.title}>{t('allSet')}</Text>
                 <Text style={styles.subtitle}>
-                    Hello {profile?.name || 'Friend'}! MedRemind will make sure you never miss a medicine.
+                    {t('allSetSubtitle').replace('{name}', profile?.name || 'Friend')}
                 </Text>
                 <View style={styles.voiceCard}>
                     <Text style={styles.voiceIcon}>🔊</Text>
                     <View style={styles.voiceTextContainer}>
-                        <Text style={styles.voiceTitle}>Voice assistant ready</Text>
+                        <Text style={styles.voiceTitle}>{t('voiceReady')}</Text>
                         <Text style={styles.voiceSubtitle}>
                             "Time for your Metformin at 9 PM"
                         </Text>
@@ -52,7 +69,7 @@ const AllSetScreen = ({ route, navigation, setIsOnboarded }) => {
                     {saving ? (
                         <ActivityIndicator color={COLORS.white} />
                     ) : (
-                        <Text style={styles.ctaText}>Scan my first medicine</Text>
+                        <Text style={styles.ctaText}>{t('scanFirstMedicine')}</Text>
                     )}
                 </TouchableOpacity>
             </View>

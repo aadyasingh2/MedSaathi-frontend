@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { getTranslation } from '../constants/translations';
 
 const languages = [
     { code: 'EN', label: 'English', flag: '🇮🇳' },
@@ -13,6 +14,7 @@ const languages = [
 
 const WelcomeScreen = ({ navigation }) => {
     const [selectedLanguage, setSelectedLanguage] = useState('EN');
+    const t = (key) => getTranslation(selectedLanguage, key);
 
     const handleNext = () => {
         navigation.navigate('ProfileSetup', { language: selectedLanguage });
@@ -22,9 +24,9 @@ const WelcomeScreen = ({ navigation }) => {
         <View style={styles.screen}>
             <ScrollView contentContainerStyle={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Welcome!</Text>
-                    <Text style={styles.subtitle}>Choose your language</Text>
-                    <Text style={styles.description}>अपनी भाषा चुनें</Text>
+                    <Text style={styles.title}>{t('welcomeTitle')}</Text>
+                    <Text style={styles.subtitle}>{t('welcomeSubtitle')}</Text>
+                    <Text style={styles.description}>{t('welcomeDescription')}</Text>
                 </View>
 
                 <View style={styles.languageGrid}>
@@ -52,7 +54,7 @@ const WelcomeScreen = ({ navigation }) => {
                 </View>
 
                 <TouchableOpacity style={styles.ctaButton} onPress={handleNext}>
-                    <Text style={styles.ctaText}>Get Started →</Text>
+                    <Text style={styles.ctaText}>{t('getStarted')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>

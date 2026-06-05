@@ -7,9 +7,10 @@ import {
     Animated,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { markMedicineTaken } from '../utils/helpers';
 
 const VerifiedScreen = ({ route, navigation }) => {
-    const { medicineName, dosage } = route.params || {
+    const { medicineName, dosage, medicineId, verification } = route.params || {
         medicineName: 'Metformin',
         dosage: '500mg',
     };
@@ -17,6 +18,13 @@ const VerifiedScreen = ({ route, navigation }) => {
     const scaleAnim = React.useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
+        const markAsTaken = async () => {
+            if (medicineId) {
+                await markMedicineTaken(medicineId);
+            }
+        };
+
+        markAsTaken();
         Animated.sequence([
             Animated.timing(scaleAnim, {
                 toValue: 1,
@@ -24,7 +32,7 @@ const VerifiedScreen = ({ route, navigation }) => {
                 useNativeDriver: true,
             }),
         ]).start();
-    }, [scaleAnim]);
+    }, [medicineId, scaleAnim]);
 
     return (
         <View style={styles.screen}>
@@ -48,7 +56,7 @@ const VerifiedScreen = ({ route, navigation }) => {
                 <ConfirmationCard
                     icon="✓"
                     title="Photo verified"
-                    subtitle="by AI"
+                    subtitle={verification?.confidence ? `${verification.confidence} confidence` : 'by AI'}
                 />
                 <ConfirmationCard
                     icon="📲"

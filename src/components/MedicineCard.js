@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, SHADOWS, BORDER_RADIUS } from '../constants/theme';
 import StatusBadge from './StatusBadge';
 
-const MedicineCard = ({ medicine }) => {
+const MedicineCard = ({ medicine, onTake }) => {
     return (
         <View style={styles.card}>
             <View style={styles.row}>
@@ -24,6 +24,11 @@ const MedicineCard = ({ medicine }) => {
                 {/* Status badge */}
                 <View style={styles.badgeContainer}>
                     <StatusBadge status={medicine.status} />
+                    {onTake && (
+                        <TouchableOpacity style={styles.takeButton} onPress={onTake}>
+                            <Text style={styles.takeButtonText}>Take medicine</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
         </View>
@@ -69,6 +74,19 @@ const styles = StyleSheet.create({
     },
     badgeContainer: {
         marginLeft: SPACING.sm,
+        alignItems: 'flex-end',
+    },
+    takeButton: {
+        marginTop: SPACING.sm,
+        backgroundColor: COLORS.primaryLight,
+        borderRadius: BORDER_RADIUS.round,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+    },
+    takeButtonText: {
+        color: COLORS.primary,
+        fontSize: FONTS.sizes.xs,
+        fontWeight: '700',
     },
 });
 

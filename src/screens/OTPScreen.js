@@ -10,10 +10,16 @@ import {
     Alert,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { getTranslation } from '../constants/translations';
+import { API_BASE_URL } from '../config/api';
 
 const OTPScreen = ({ route, navigation }) => {
     const { profile } = route.params || {};
+    const language = profile?.language || 'EN';
+    const t = (key) => getTranslation(language, key);
     const [otp, setOtp] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
     const otpInput = useRef(null);
 
     useEffect(() => {
@@ -22,26 +28,45 @@ const OTPScreen = ({ route, navigation }) => {
     }, []);
 
     const handleVerify = async () => {
-        const res = await fetch('http://10.255.177.152:3000/api/auth/verify-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: profile?.phone, otp }),
-        });
-        const data = await res.json();
-        if (data.success) {
-            navigation.navigate('CaregiverSetup', { profile });
-        } else {
-            Alert.alert('Wrong OTP', 'Use 123456 for now');
+        if (!otp || otp.length < 6) return;
+
+        setIsVerifying(true);
+        setErrorMessage('');
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: profile?.phone, otp }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data?.success) {
+                navigation.navigate('CaregiverSetup', { profile });
+                return;
+            }
+
+            const message = data?.error || data?.message || 'Please enter the correct 6-digit code.';
+            setErrorMessage(message);
+            Alert.alert('Invalid OTP', message);
+        } catch (error) {
+            const message = 'Could not verify OTP right now.';
+            setErrorMessage(message);
+            Alert.alert('Connection error', message);
+        } finally {
+            setIsVerifying(false);
         }
     };
 
     const handleChange = (value) => {
         const sanitized = value.replace(/[^0-9]/g, '');
         setOtp(sanitized.slice(0, 6));
+        if (errorMessage) setErrorMessage('');
     };
 
     const digits = otp.padEnd(6, ' ').split('');
-    const isDisabled = otp.length < 6;
+    const isDisabled = otp.length < 6 || isVerifying;
 
     return (
         <KeyboardAvoidingView
@@ -50,9 +75,9 @@ const OTPScreen = ({ route, navigation }) => {
         >
             <View style={styles.container}>
                 <Text style={styles.icon}>📲</Text>
-                <Text style={styles.title}>Check your phone</Text>
+                <Text style={styles.title}>{t('checkPhone')}</Text>
                 <Text style={styles.subtitle}>
-                    Enter the 6-digit code sent to {profile?.phone || '+91 98765 43210'}
+                    {t('otpSubtitle')} {profile?.phone || '+91 98765 43210'}
                 </Text>
 
                 <TextInput
@@ -74,8 +99,12 @@ const OTPScreen = ({ route, navigation }) => {
                     ))}
                 </TouchableOpacity>
 
+                {errorMessage ? (
+                    <Text style={styles.errorText} accessibilityLiveRegion="polite">{errorMessage}</Text>
+                ) : null}
+
                 <TouchableOpacity style={styles.resendButton}>
-                    <Text style={styles.resendText}>Resend code</Text>
+                    <Text style={styles.resendText}>{t('resendCode')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -83,7 +112,7 @@ const OTPScreen = ({ route, navigation }) => {
                     onPress={handleVerify}
                     disabled={isDisabled}
                 >
-                    <Text style={styles.ctaText}>Verify →</Text>
+                    <Text style={styles.ctaText}>{t('verify')}</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
@@ -144,6 +173,13 @@ const styles = StyleSheet.create({
         fontSize: FONTS.sizes.xl,
         fontWeight: '700',
         color: COLORS.textDark,
+    },
+    errorText: {
+        color: '#B42318',
+        fontSize: FONTS.sizes.sm,
+        textAlign: 'center',
+        marginBottom: SPACING.md,
+        fontWeight: '600',
     },
     resendButton: {
         marginBottom: SPACING.xxxl,

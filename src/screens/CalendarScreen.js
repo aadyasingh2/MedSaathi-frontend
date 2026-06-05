@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -10,16 +10,25 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import { CALENDAR_MEDICINES, MARKED_DATES } from '../constants/mockData';
-import { formatDateShort, getTodayString } from '../utils/helpers';
+import { formatDateShort, getTodayString, loadAdherenceDates } from '../utils/helpers';
 import TimelineItem from '../components/TimelineItem';
 
 const CalendarScreen = () => {
     const todayStr = getTodayString();
     const [selectedDate, setSelectedDate] = useState(todayStr);
+    const [markedDates, setMarkedDates] = useState(MARKED_DATES);
+
+    useEffect(() => {
+        const refresh = async () => {
+            const adherence = await loadAdherenceDates();
+            setMarkedDates({ ...MARKED_DATES, ...adherence });
+        };
+        refresh();
+    }, []);
 
     const calendarDays = useMemo(
-        () => Object.keys(MARKED_DATES).sort(),
-        []
+        () => Object.keys(markedDates).sort(),
+        [markedDates]
     );
 
     const displayDate = new Date(selectedDate + 'T00:00:00');
@@ -51,7 +60,7 @@ const CalendarScreen = () => {
                         const isSelected = dateString === selectedDate;
                         const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' });
                         const dayNumber = String(date.getDate()).padStart(2, '0');
-                        const hasDot = MARKED_DATES[dateString]?.marked;
+                        const hasDot = markedDates[dateString]?.marked;
 
                         return (
                             <TouchableOpacity

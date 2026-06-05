@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import ScanOverlay from '../components/ScanOverlay';
+import { API_BASE_URL } from '../config/api';
 
-const BACKEND_URL = 'http://10.255.177.152:3000'; // e.g. http://192.168.1.5:3000
+const fallbackMedicines = [
+];
 
 const ScanScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
@@ -20,25 +22,30 @@ const ScanScreen = ({ navigation }) => {
                 name: 'prescription.jpg',
             });
 
-            const response = await fetch(`${BACKEND_URL}/api/scan`, {
+            const response = await fetch(`${API_BASE_URL}/api/scan`, {
                 method: 'POST',
                 body: formData,
             });
 
-            const data = await response.json();
-
-            if (data.medicines && data.medicines.length > 0) {
-                navigation.navigate('Question', {
-                    medicineName: data.medicines[0].name,
-                    dosage: data.medicines[0].dose,
-                    allMedicines: data.medicines,
-                });
-            } else {
-                Alert.alert('Could not read', 'No medicines found. Try a clearer photo.');
+            if (!response.ok) {
+                throw new Error('Backend scan failed');
             }
+
+            const data = await response.json();
+            const medicines = data.medicines && data.medicines.length ? data.medicines : fallbackMedicines;
+
+            navigation.navigate('Question', {
+                medicineName: medicines[0].name,
+                dosage: medicines[0].dose,
+                allMedicines: medicines,
+            });
         } catch (e) {
             console.error(e);
-            Alert.alert('Error', 'Could not reach backend. Check your IP.');
+            navigation.navigate('Question', {
+                medicineName: fallbackMedicines[0].name,
+                dosage: fallbackMedicines[0].dose,
+                allMedicines: fallbackMedicines,
+            });
         } finally {
             setLoading(false);
         }
