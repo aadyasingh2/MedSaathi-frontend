@@ -7,6 +7,8 @@ import ScanOverlay from '../components/ScanOverlay';
 import { API_BASE_URL } from '../config/api';
 
 const fallbackMedicines = [
+    { name: 'Metformin', dose: '500 mg' },
+    { name: 'Amlodipine', dose: '5 mg' },
 ];
 
 const ScanScreen = ({ navigation }) => {
